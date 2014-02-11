@@ -8,19 +8,25 @@ public class Solution {
 
     int counter = 0;
 
-    int nMax = 90000;
-    int nMin = 0;
+    int nMax    = 90000;
+    int nMin    = 0;
 
     public int[] solution(int K, int[] T) {
-        LinkedList<Integer> result = new LinkedList<Integer>();
+        int[] result = new int[T.length];
+        int resultIndex = 0;
         boolean[] visited = new boolean[T.length];
         Node start = traverseTree(T, K);
 
-        result.addLast(start.id);
+        result[resultIndex++] = start.id;
 
-        result = step(start, visited, result);
+        // result = step(start, visited, result);
 
-        return composeResult(result);
+        while (!taskComplete(visited)) {
+            start = travel(findPath(start, visited), visited);
+            result[resultIndex++] = start.id;
+        }
+
+        return result;
     }
 
     private int[] composeResult(LinkedList<Integer> list) {
@@ -80,28 +86,31 @@ public class Solution {
     }
 
     private LinkedList<Node> findPath(Node root, boolean[] visited) {
-        LinkedList<Node> path = findPath(root, root, visited);
-        path.addFirst(root);
-        return path;
+        Result result = findPath(root, root, visited);
+        result.path.addFirst(root);
+        return result.path;
     }
 
-    private LinkedList<Node> findPath(Node root, Node prev, boolean[] visited) {
+    private Result findPath(Node root, Node prev, boolean[] visited) {
         counter++;
 
         if (root.neighbours.size() == 1 && root.neighbours.contains(prev)) {
-            LinkedList<Node> path = new LinkedList<Node>();
-            path.addLast(root);
-            return path;
+            Result result = new Result();
+            result.path = new LinkedList<Node>();
+            result.quality = visited[root.id] ? 0 : 1;
+            result.path.addLast(root);
+            return result;
         } else {
-            LinkedList<Node> bestPath = null;
+            Result bestPath = null;
             for (Node next : root.neighbours) {
                 if (!next.equals(prev)) {
-                    LinkedList<Node> path = findPath(next, root, visited);
-                    path.addFirst(root);
+                    Result result = findPath(next, root, visited);
+                    result.path.addFirst(root);
+                    result.quality += visited[root.id] ? 0 : 1;
                     if (bestPath == null) {
-                        bestPath = path;
+                        bestPath = result;
                     } else {
-                        bestPath = getBest(bestPath, path, visited);
+                        bestPath = getBest(bestPath, result);
                     }
                 }
             }
@@ -109,27 +118,21 @@ public class Solution {
         }
     }
 
-    private LinkedList<Node> getBest(LinkedList<Node> pathA, LinkedList<Node> pathB, boolean[] visited) {
-        if (getPathQuality(pathA, visited) > getPathQuality(pathB, visited)) {
+    private Result getBest(Result pathA, Result pathB) {
+        if (pathA.quality > pathB.quality) {
             return pathA;
-        } else if (getPathQuality(pathB, visited) > getPathQuality(pathA, visited)) {
+        } else if (pathB.quality > pathA.quality) {
             return pathB;
-        } else if (pathA.getLast().id < pathB.getLast().id) {
+        } else if (pathA.path.getLast().id < pathB.path.getLast().id) {
             return pathA;
         } else {
             return pathB;
         }
     }
 
-    private int getPathQuality(LinkedList<Node> path, boolean[] visited) {
-        int result = 0;
-
-        for (Node node : path) {
-            if (!visited[node.id]) {
-                result++;
-            }
-        }
-        return result;
+    public class Result {
+        LinkedList<Node> path;
+        int              quality = 0;
     }
 
     public class Node {

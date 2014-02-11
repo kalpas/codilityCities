@@ -20,4 +20,16 @@ public class SolutionTest {
         }
 
     }
+
+    @Test
+    public void test2() {
+        Solution solution = new Solution();
+
+        int[] generate = new GraphGenerator().generate(10000);
+
+        long start = System.nanoTime();
+        solution.solution(2, generate);
+        long end = System.nanoTime();
+        System.out.println(end - start);// 9 756 830 937
+    }
 }
