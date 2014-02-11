@@ -1,21 +1,34 @@
 package codility;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class Solution {
+
+    int counter = 0;
 
     int nMax = 90000;
     int nMin = 0;
 
     public int[] solution(int K, int[] T) {
-        Node root = traverseTree(T, K);
+        LinkedList<Integer> result = new LinkedList<Integer>();
+        boolean[] visited = new boolean[T.length];
+        Node start = traverseTree(T, K);
 
-        return T;
+        result.addLast(start.id);
+
+        result = step(start, visited, result);
+
+        return composeResult(result);
     }
 
-    private boolean connected(int a, int b, int[] T) {
-        return (T[a] == b || T[b] == a) && a != b;
+    private int[] composeResult(LinkedList<Integer> list) {
+        int[] result = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
     }
 
     // return head of the tree
@@ -31,31 +44,92 @@ public class Solution {
             if (to == null) {
                 to = nodes[T[i]] = new Node(T[i]);
             }
-            from.neighbours.add(to);
-            to.neighbours.add(from);
+            if (!to.equals(from)) {
+                from.neighbours.add(to);
+                to.neighbours.add(from);
+            }
         }
 
         return nodes[K];
 
     }
 
-    private Node findPath(Node root) {
-
-        return null;
+    private LinkedList<Integer> step(Node start, boolean[] visited, LinkedList<Integer> result) {
+        start = travel(findPath(start, visited), visited);
+        result.addLast(start.id);
+        if (taskComplete(visited)) {
+            return result;
+        } else {
+            return step(start, visited, result);
+        }
     }
 
-    private Node findPath(Node root, Node prev) {
+    private boolean taskComplete(boolean[] visited) {
+        for (boolean b : visited) {
+            if (!b)
+                return false;
+        }
+        return true;
+    }
+
+    private Node travel(LinkedList<Node> path, boolean[] visited) {
+        for (Node node : path) {
+            visited[node.id] = true;
+        }
+        return path.getLast();
+    }
+
+    private LinkedList<Node> findPath(Node root, boolean[] visited) {
+        LinkedList<Node> path = findPath(root, root, visited);
+        path.addFirst(root);
+        return path;
+    }
+
+    private LinkedList<Node> findPath(Node root, Node prev, boolean[] visited) {
+        counter++;
+
         if (root.neighbours.size() == 1 && root.neighbours.contains(prev)) {
-            return root;
+            LinkedList<Node> path = new LinkedList<Node>();
+            path.addLast(root);
+            return path;
         } else {
+            LinkedList<Node> bestPath = null;
             for (Node next : root.neighbours) {
                 if (!next.equals(prev)) {
-                    findPath(next, root);
+                    LinkedList<Node> path = findPath(next, root, visited);
+                    path.addFirst(root);
+                    if (bestPath == null) {
+                        bestPath = path;
+                    } else {
+                        bestPath = getBest(bestPath, path, visited);
+                    }
                 }
             }
+            return bestPath;
         }
+    }
 
-        return null;
+    private LinkedList<Node> getBest(LinkedList<Node> pathA, LinkedList<Node> pathB, boolean[] visited) {
+        if (getPathQuality(pathA, visited) > getPathQuality(pathB, visited)) {
+            return pathA;
+        } else if (getPathQuality(pathB, visited) > getPathQuality(pathA, visited)) {
+            return pathB;
+        } else if (pathA.getLast().id < pathB.getLast().id) {
+            return pathA;
+        } else {
+            return pathB;
+        }
+    }
+
+    private int getPathQuality(LinkedList<Node> path, boolean[] visited) {
+        int result = 0;
+
+        for (Node node : path) {
+            if (!visited[node.id]) {
+                result++;
+            }
+        }
+        return result;
     }
 
     public class Node {
@@ -101,6 +175,11 @@ public class Solution {
 
         private Solution getOuterType() {
             return Solution.this;
+        }
+
+        @Override
+        public String toString() {
+            return id.toString();
         }
 
     }
