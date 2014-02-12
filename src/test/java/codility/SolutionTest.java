@@ -30,6 +30,9 @@ public class SolutionTest {
         long start = System.nanoTime();
         solution.solution(2, generate);
         long end = System.nanoTime();
-        System.out.println(end - start);// 9 756 830 937
+        System.out.println(end - start);// 6 635771149
+        // 90 000 - 944 306 669 669
+        // 10 - 4 451 870 724
+
     }
 }

@@ -1,8 +1,7 @@
 package codility;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Set;
 
 public class Solution {
 
@@ -12,13 +11,24 @@ public class Solution {
     int nMin    = 0;
 
     public int[] solution(int K, int[] T) {
+        if(T.length==1){
+            return new int[] { 0 };
+        }
+
         LinkedList<Integer> result = new LinkedList<Integer>();
         boolean[] visited = new boolean[T.length];
         Node start = traverseTree(T, K);
 
         result.addLast(start.id);
 
-        result = step(start, visited, result);
+        while (!taskComplete(visited)) {
+            start = travel(findPath(start, visited).nodes, visited);
+            result.addLast(start.id);
+
+            Node old = start;
+            start = start.neighbours.get(0);
+            start.neighbours.remove(old);
+        }
 
         return composeResult(result);
     }
@@ -54,16 +64,6 @@ public class Solution {
 
     }
 
-    private LinkedList<Integer> step(Node start, boolean[] visited, LinkedList<Integer> result) {
-        start = travel(findPath(start, visited), visited);
-        result.addLast(start.id);
-        if (taskComplete(visited)) {
-            return result;
-        } else {
-            return step(start, visited, result);
-        }
-    }
-
     private boolean taskComplete(boolean[] visited) {
         for (boolean b : visited) {
             if (!b)
@@ -79,25 +79,29 @@ public class Solution {
         return path.getLast();
     }
 
-    private LinkedList<Node> findPath(Node root, boolean[] visited) {
-        LinkedList<Node> path = findPath(root, root, visited);
-        path.addFirst(root);
+    private Path findPath(Node root, boolean[] visited) {
+        Path path = findPath(root, root, visited);
+        path.nodes.addFirst(root);
         return path;
     }
 
-    private LinkedList<Node> findPath(Node root, Node prev, boolean[] visited) {
+    private Path findPath(Node root, Node prev, boolean[] visited) {
         counter++;
 
         if (root.neighbours.size() == 1 && root.neighbours.contains(prev)) {
-            LinkedList<Node> path = new LinkedList<Node>();
-            path.addLast(root);
+            Path path = new Path();
+            path.nodes = new LinkedList<Node>();
+            path.nodes.addLast(root);
+            path.quality += visited[root.id] ? 0 : 1;
+
             return path;
         } else {
-            LinkedList<Node> bestPath = null;
+            Path bestPath = null;
             for (Node next : root.neighbours) {
                 if (!next.equals(prev)) {
-                    LinkedList<Node> path = findPath(next, root, visited);
-                    path.addFirst(root);
+                    Path path = findPath(next, root, visited);
+                    path.nodes.addFirst(root);
+                    path.quality += visited[root.id] ? 0 : 1;
                     if (bestPath == null) {
                         bestPath = path;
                     } else {
@@ -109,27 +113,22 @@ public class Solution {
         }
     }
 
-    private LinkedList<Node> getBest(LinkedList<Node> pathA, LinkedList<Node> pathB, boolean[] visited) {
-        if (getPathQuality(pathA, visited) > getPathQuality(pathB, visited)) {
+    private Path getBest(Path pathA, Path pathB, boolean[] visited) {
+        if (pathA.quality > pathB.quality) {
             return pathA;
-        } else if (getPathQuality(pathB, visited) > getPathQuality(pathA, visited)) {
+        } else if (pathB.quality > pathA.quality) {
             return pathB;
-        } else if (pathA.getLast().id < pathB.getLast().id) {
+        } else if (pathA.nodes.getLast().id < pathB.nodes.getLast().id) {
             return pathA;
         } else {
             return pathB;
         }
     }
 
-    private int getPathQuality(LinkedList<Node> path, boolean[] visited) {
-        int result = 0;
+    public class Path {
+        public LinkedList<Node> nodes;
 
-        for (Node node : path) {
-            if (!visited[node.id]) {
-                result++;
-            }
-        }
-        return result;
+        public int              quality = 0;
     }
 
     public class Node {
@@ -141,9 +140,9 @@ public class Solution {
             this.id = id;
         }
 
-        public Integer   id;
+        public Integer         id;
 
-        public Set<Node> neighbours = new HashSet<Node>();
+        public ArrayList<Node> neighbours = new ArrayList<Node>();
 
         @Override
         public int hashCode() {
