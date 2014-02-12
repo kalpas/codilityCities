@@ -10,6 +10,7 @@ public class Solution {
     int nMax    = 90000;
     int nMin    = 0;
 
+    // TODO use tack instead of recursion
     public int[] solution(int K, int[] T) {
         if(T.length==1){
             return new int[] { 0 };
